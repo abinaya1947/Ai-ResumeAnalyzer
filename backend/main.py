@@ -4,14 +4,22 @@ import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv()
 
+# Configure Gemini API
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
+# Load Gemini model
 model = genai.GenerativeModel("gemini-3.5-flash")
 
-app = FastAPI()
+# Create FastAPI app
+app = FastAPI(
+    title="AI Resume Analyzer API",
+    version="1.0"
+)
 
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,29 +28,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Home Route
+@app.get("/")
+def home():
+    return {
+        "message": "AI Resume Analyzer API is running successfully!"
+    }
+
+# Analyze Resume Route
 @app.post("/analyze")
 async def analyze_resume(
     resume: UploadFile = File(...),
     job_role: str = Form(...)
 ):
+    # Read uploaded resume
     resume_text = (await resume.read()).decode("utf-8", errors="ignore")
 
     prompt = f"""
 You are an ATS Resume Analyzer.
 
-Analyze this resume for the role: {job_role}
+Analyze the following resume for the role of {job_role}.
 
 Provide:
 
-1. Resume Score /100
+1. Resume Score out of 100
 2. Strengths
 3. Weaknesses
 4. Missing Skills
-5. Improvement Suggestions
+5. Suggestions to Improve
 6. 5 Interview Questions
 
 Resume:
-
 {resume_text}
 """
 
@@ -51,10 +67,3 @@ Resume:
     return {
         "analysis": response.text
     }
-    from fastapi import FastAPI
-
-app = FastAPI()
-
-@app.get("/")
-def home():
-    return {"message": "AI Resume Analyzer API is running successfully!"}
